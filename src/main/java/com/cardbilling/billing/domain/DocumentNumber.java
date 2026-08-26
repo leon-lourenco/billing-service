@@ -15,10 +15,10 @@ public record DocumentNumber(String value) {
 
     public DocumentNumber {
         if (value == null || value.isBlank()) {
-            throw new IllegalArgumentException("Document number must not be blank");
+            throw new MalformedValueException("documentNumber", "Document number must not be blank");
         }
         if (value.length() != LENGTH || !value.chars().allMatch(Character::isDigit)) {
-            throw new IllegalArgumentException(
+            throw new MalformedValueException("documentNumber",
                     "Document number must be exactly " + LENGTH + " digits, got: " + value);
         }
     }

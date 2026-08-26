@@ -1,6 +1,7 @@
 package com.cardbilling.billing.application;
 
 import com.cardbilling.billing.domain.DocumentNumber;
+import com.cardbilling.billing.domain.MalformedValueException;
 import com.cardbilling.billing.domain.Money;
 import java.time.LocalDate;
 import java.util.Objects;
@@ -27,7 +28,8 @@ public record InvoiceSearchQuery(
         Objects.requireNonNull(amountOwed, "amountOwed");
         Objects.requireNonNull(aroundDate, "aroundDate");
         if (toleranceDays < 0) {
-            throw new IllegalArgumentException("Tolerance in days must not be negative, got: " + toleranceDays);
+            throw new MalformedValueException("toleranceDays",
+                    "Tolerance in days must not be negative, got: " + toleranceDays);
         }
     }
 

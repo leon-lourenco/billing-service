@@ -27,13 +27,25 @@ class DocumentNumberTest {
     @DisplayName("rejects anything that is not exactly 11 digits")
     void rejectsMalformed(String malformed) {
         assertThatThrownBy(() -> DocumentNumber.of(malformed))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(MalformedValueException.class)
+                .extracting(thrown -> ((MalformedValueException) thrown).field())
+                .isEqualTo("documentNumber");
     }
 
     @Test
     @DisplayName("rejects null")
     void rejectsNull() {
         assertThatThrownBy(() -> DocumentNumber.of(null))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(MalformedValueException.class);
+    }
+
+    @Test
+    @DisplayName("malformed input is a domain failure, not a generic IllegalArgumentException")
+    void malformedInputIsADomainFailure() {
+        // The distinction the web layer relies on: bad input from a caller is a 400, whereas an
+        // IllegalArgumentException escaping from anywhere else means this service has a bug.
+        assertThatThrownBy(() -> DocumentNumber.of("nope"))
+                .isInstanceOf(BillingDomainException.class)
+                .isNotInstanceOf(IllegalArgumentException.class);
     }
 }
