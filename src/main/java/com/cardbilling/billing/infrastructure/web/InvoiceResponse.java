@@ -8,6 +8,11 @@ import java.time.LocalDate;
 public record InvoiceResponse(
         Long id,
         long cardId,
+        @Schema(description = """
+                The cardholder this invoice is owed by. Callers that act on the customer rather \
+                than the invoice - notifying them, for instance - address them by this id.""")
+        long customerId,
+        @Schema(description = "The cardholder's document number, as an external bank statement knows them")
         String documentNumber,
         String referenceMonth,
         LocalDate closingDate,
@@ -27,6 +32,7 @@ public record InvoiceResponse(
         return new InvoiceResponse(
                 invoice.id(),
                 invoice.cardId(),
+                invoice.customerId(),
                 invoice.customerDocumentNumber().value(),
                 invoice.referenceMonth(),
                 invoice.closingDate(),

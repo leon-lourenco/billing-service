@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.cardbilling.billing.application.port.InvoiceRepositoryPort;
 import com.cardbilling.billing.domain.BillingCycle;
+import com.cardbilling.billing.domain.Cardholder;
 import com.cardbilling.billing.domain.DocumentNumber;
 import com.cardbilling.billing.domain.Invoice;
 import com.cardbilling.billing.domain.Money;
@@ -34,6 +35,7 @@ class InvoiceApiIntegrationTest extends PostgresIntegrationTest {
     private static final LocalDate CLOSING_DATE = LocalDate.of(2026, 3, 15);
     private static final LocalDate DUE_DATE = LocalDate.of(2026, 3, 25);
     private static final AtomicLong UNIQUE = new AtomicLong(100);
+    private static final AtomicLong CUSTOMER_ID = new AtomicLong(900);
 
     @Autowired
     private WebApplicationContext context;
@@ -55,8 +57,8 @@ class InvoiceApiIntegrationTest extends PostgresIntegrationTest {
     }
 
     private Invoice anInvoiceFor(DocumentNumber cardholder, long totalCents) {
-        return invoices.save(Invoice.close(1L, cardholder, BillingCycle.closingOn(CLOSING_DATE),
-                Money.ofCents(totalCents)));
+        return invoices.save(Invoice.close(1L, Cardholder.of(CUSTOMER_ID.incrementAndGet(), cardholder),
+                BillingCycle.closingOn(CLOSING_DATE), Money.ofCents(totalCents)));
     }
 
     @Nested
@@ -73,6 +75,19 @@ class InvoiceApiIntegrationTest extends PostgresIntegrationTest {
                     .andExpect(jsonPath("$[?(@.id == %d)]".formatted(invoice.id()), hasSize(1)))
                     .andExpect(jsonPath("$[?(@.id == %d)].amountOwedCents".formatted(invoice.id()))
                             .value(150_000));
+        }
+
+        @Test
+        @DisplayName("carries the numeric customer id, which collections-service passes on when notifying")
+        void exposesCustomerId() throws Exception {
+            Invoice invoice = anInvoiceFor(uniqueCardholder(), 160_000);
+
+            mvc().perform(get("/invoices/overdue").param("asOf", DUE_DATE.plusDays(1).toString()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$[?(@.id == %d)].customerId".formatted(invoice.id()))
+                            .value(Math.toIntExact(invoice.customerId())))
+                    .andExpect(jsonPath("$[?(@.id == %d)].documentNumber".formatted(invoice.id()))
+                            .value(invoice.customerDocumentNumber().value()));
         }
 
         @Test
@@ -100,7 +115,9 @@ class InvoiceApiIntegrationTest extends PostgresIntegrationTest {
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$", hasSize(1)))
                     .andExpect(jsonPath("$[0].id").value(invoice.id()))
-                    .andExpect(jsonPath("$[0].documentNumber").value(cardholder.value()));
+                    .andExpect(jsonPath("$[0].documentNumber").value(cardholder.value()))
+                    // reconciliation-service matches on the document, but still gets the id back
+                    .andExpect(jsonPath("$[0].customerId").value(Math.toIntExact(invoice.customerId())));
         }
 
         @Test

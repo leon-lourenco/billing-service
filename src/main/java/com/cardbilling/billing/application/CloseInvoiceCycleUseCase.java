@@ -74,7 +74,7 @@ public class CloseInvoiceCycleUseCase {
                 .reduce(Money.ZERO, Money::plus);
 
         Invoice invoice = invoiceRepository.save(
-                Invoice.close(billableCard.cardId(), billableCard.cardholderDocument(), cycle, total));
+                Invoice.close(billableCard.cardId(), billableCard.cardholder(), cycle, total));
 
         transactionRepository.saveAll(transactions.stream()
                 .map(transaction -> transaction.assignedTo(invoice))

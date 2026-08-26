@@ -1,5 +1,6 @@
 package com.cardbilling.billing.infrastructure.persistence;
 
+import com.cardbilling.billing.domain.Cardholder;
 import com.cardbilling.billing.domain.DocumentNumber;
 import com.cardbilling.billing.domain.InterestAccrual;
 import com.cardbilling.billing.domain.Invoice;
@@ -50,6 +51,14 @@ public class InvoiceEntity {
     @Column(name = "card_id", nullable = false)
     private Long cardId;
 
+    /**
+     * Denormalised alongside the document number, and for the same reason: a caller that reads
+     * overdue invoices here and then acts on the cardholder elsewhere - notifying them, say -
+     * needs their id without a second round trip per invoice.
+     */
+    @Column(name = "customer_id", nullable = false)
+    private Long customerId;
+
     @Column(name = "customer_document_number", nullable = false, length = 11)
     private String customerDocumentNumber;
 
@@ -96,6 +105,7 @@ public class InvoiceEntity {
         InvoiceEntity entity = new InvoiceEntity();
         entity.id = invoice.id();
         entity.cardId = invoice.cardId();
+        entity.customerId = invoice.customerId();
         entity.customerDocumentNumber = invoice.customerDocumentNumber().value();
         entity.referenceMonth = invoice.referenceMonth();
         entity.closingDate = invoice.closingDate();
@@ -131,7 +141,7 @@ public class InvoiceEntity {
         return Invoice.reconstitute(
                 id,
                 cardId,
-                DocumentNumber.of(customerDocumentNumber),
+                Cardholder.of(customerId, DocumentNumber.of(customerDocumentNumber)),
                 referenceMonth,
                 closingDate,
                 dueDate,

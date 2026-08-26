@@ -3,6 +3,7 @@ package com.cardbilling.billing.application;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.cardbilling.billing.domain.BillingCycle;
+import com.cardbilling.billing.domain.Cardholder;
 import com.cardbilling.billing.domain.DocumentNumber;
 import com.cardbilling.billing.domain.Invoice;
 import com.cardbilling.billing.domain.Money;
@@ -15,7 +16,7 @@ import org.junit.jupiter.api.Test;
 
 class GetOverdueInvoicesUseCaseTest {
 
-    private static final DocumentNumber CARDHOLDER = DocumentNumber.of("10000000042");
+    private static final Cardholder CARDHOLDER = Cardholder.of(7L, DocumentNumber.of("10000000042"));
     private static final LocalDate DUE_DATE = LocalDate.of(2026, 3, 25);
 
     private InMemoryInvoiceRepository invoices;

@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.cardbilling.billing.application.CloseInvoiceCycleUseCase;
 import com.cardbilling.billing.application.CycleClosingSummary;
+import com.cardbilling.billing.application.InvoiceSearchQuery;
+import com.cardbilling.billing.application.port.InvoiceRepositoryPort;
 import com.cardbilling.billing.application.port.AccountRepositoryPort;
 import com.cardbilling.billing.application.port.CardRepositoryPort;
 import com.cardbilling.billing.application.port.CardTransactionRepositoryPort;
@@ -13,6 +15,7 @@ import com.cardbilling.billing.domain.Card;
 import com.cardbilling.billing.domain.CardTransaction;
 import com.cardbilling.billing.domain.Customer;
 import com.cardbilling.billing.domain.DocumentNumber;
+import com.cardbilling.billing.domain.Invoice;
 import com.cardbilling.billing.domain.Money;
 import com.cardbilling.billing.infrastructure.PostgresIntegrationTest;
 import java.time.LocalDate;
@@ -46,10 +49,13 @@ class CycleClosingIntegrationTest extends PostgresIntegrationTest {
     @Autowired
     private CloseInvoiceCycleUseCase closeInvoiceCycle;
 
-    private record Cardholder(Customer customer, Card card) {
+    @Autowired
+    private InvoiceRepositoryPort invoices;
+
+    private record SeededCardholder(Customer customer, Card card) {
     }
 
-    private Cardholder cardholderWithCycleDay(int cycleDay) {
+    private SeededCardholder cardholderWithCycleDay(int cycleDay) {
         long unique = UNIQUE.incrementAndGet();
         Customer customer = customers.save(Customer.register("Ana Ribeiro",
                 DocumentNumber.of(String.format("%011d", 30_000_000_000L + unique)),
@@ -58,13 +64,13 @@ class CycleClosingIntegrationTest extends PostgresIntegrationTest {
                 Account.open(customer.id(), "ACC-CLOSING-" + unique, NOW.minusMonths(6)));
         Card card = cards.save(Card.issue(account.id(), "**** **** **** 4321",
                 Money.ofCents(500_000), cycleDay));
-        return new Cardholder(customer, card);
+        return new SeededCardholder(customer, card);
     }
 
     @Test
     @DisplayName("closes a cycle, stamping the invoice with the cardholder found by joining through the account")
     void closesCycleWithCardholderDocument() {
-        Cardholder cardholder = cardholderWithCycleDay(15);
+        SeededCardholder cardholder = cardholderWithCycleDay(15);
         transactions.save(CardTransaction.record(cardholder.card().id(), "Padaria Pao Quente",
                 Money.ofCents(12_000), LocalDateTime.of(2026, 3, 1, 12, 0)));
         transactions.save(CardTransaction.record(cardholder.card().id(), "Posto Ipiranga",
@@ -75,12 +81,19 @@ class CycleClosingIntegrationTest extends PostgresIntegrationTest {
         assertThat(summary.invoicesClosed()).isPositive();
         assertThat(transactions.findUnbilledForCardBetween(cardholder.card().id(),
                 LocalDateTime.of(2026, 2, 15, 0, 0), LocalDateTime.of(2026, 3, 15, 0, 0))).isEmpty();
+
+        // Both cardholder identifiers have to survive the join, not just the one the search
+        // indexes on: a caller reading this invoice needs the id to act on the customer.
+        Invoice closed = invoices.search(new InvoiceSearchQuery(cardholder.customer().documentNumber(),
+                Money.ofCents(20_000), LocalDate.of(2026, 3, 25), 3)).getFirst();
+        assertThat(closed.customerId()).isEqualTo(cardholder.customer().id());
+        assertThat(closed.customerDocumentNumber()).isEqualTo(cardholder.customer().documentNumber());
     }
 
     @Test
     @DisplayName("leaves a card whose cycle day is another date entirely alone")
     void ignoresCardsOnOtherCycleDays() {
-        Cardholder cardholder = cardholderWithCycleDay(7);
+        SeededCardholder cardholder = cardholderWithCycleDay(7);
         transactions.save(CardTransaction.record(cardholder.card().id(), "Livraria Cultura",
                 Money.ofCents(5_000), LocalDateTime.of(2026, 3, 1, 12, 0)));
 
@@ -93,7 +106,7 @@ class CycleClosingIntegrationTest extends PostgresIntegrationTest {
     @Test
     @DisplayName("closing the same date twice bills nothing a second time")
     void rerunningClosingBillsNothingTwice() {
-        Cardholder cardholder = cardholderWithCycleDay(20);
+        SeededCardholder cardholder = cardholderWithCycleDay(20);
         transactions.save(CardTransaction.record(cardholder.card().id(), "Farmacia Popular",
                 Money.ofCents(9_000), LocalDateTime.of(2026, 3, 5, 12, 0)));
 

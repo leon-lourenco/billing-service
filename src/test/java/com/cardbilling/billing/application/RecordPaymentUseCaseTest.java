@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.cardbilling.billing.domain.BillingCycle;
+import com.cardbilling.billing.domain.Cardholder;
 import com.cardbilling.billing.domain.DocumentNumber;
 import com.cardbilling.billing.domain.Invoice;
 import com.cardbilling.billing.domain.InvoiceNotFoundException;
@@ -27,7 +28,7 @@ class RecordPaymentUseCaseTest {
     void setUp() {
         invoices = new InMemoryInvoiceRepository();
         useCase = new RecordPaymentUseCase(invoices);
-        invoiceId = invoices.save(Invoice.close(1L, DocumentNumber.of("10000000042"),
+        invoiceId = invoices.save(Invoice.close(1L, Cardholder.of(7L, DocumentNumber.of("10000000042")),
                 BillingCycle.closingOn(LocalDate.of(2026, 3, 15)), Money.ofCents(100_000))).id();
     }
 
@@ -70,7 +71,7 @@ class RecordPaymentUseCaseTest {
     @DisplayName("a statement line already matched elsewhere is not recorded again on another invoice")
     void externalReferenceIsUniqueAcrossInvoices() {
         useCase.record(reconciledPayment(100_000, "STMT-0001"));
-        long otherInvoiceId = invoices.save(Invoice.close(2L, DocumentNumber.of("10000000043"),
+        long otherInvoiceId = invoices.save(Invoice.close(2L, Cardholder.of(8L, DocumentNumber.of("10000000043")),
                 BillingCycle.closingOn(LocalDate.of(2026, 3, 15)), Money.ofCents(100_000))).id();
 
         PaymentRecordingResult result = useCase.record(new RecordPaymentCommand(otherInvoiceId,

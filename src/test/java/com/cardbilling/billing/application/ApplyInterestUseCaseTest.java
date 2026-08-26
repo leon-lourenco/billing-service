@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.cardbilling.billing.domain.BillingCycle;
+import com.cardbilling.billing.domain.Cardholder;
 import com.cardbilling.billing.domain.DocumentNumber;
 import com.cardbilling.billing.domain.InterestPolicy;
 import com.cardbilling.billing.domain.Invoice;
@@ -27,7 +28,7 @@ class ApplyInterestUseCaseTest {
     void setUp() {
         invoices = new InMemoryInvoiceRepository();
         useCase = new ApplyInterestUseCase(invoices, new InterestPolicy());
-        invoiceId = invoices.save(Invoice.close(1L, DocumentNumber.of("10000000042"),
+        invoiceId = invoices.save(Invoice.close(1L, Cardholder.of(7L, DocumentNumber.of("10000000042")),
                 BillingCycle.closingOn(CLOSING_DATE), Money.ofCents(100_000))).id();
     }
 

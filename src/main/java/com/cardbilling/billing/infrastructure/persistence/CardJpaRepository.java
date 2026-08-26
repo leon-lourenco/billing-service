@@ -14,7 +14,8 @@ interface CardJpaRepository extends JpaRepository<CardEntity, Long> {
      * per card while an invoice is being built.
      */
     @Query("""
-            select new com.cardbilling.billing.infrastructure.persistence.BillableCardRow(card, customer.documentNumber)
+            select new com.cardbilling.billing.infrastructure.persistence.BillableCardRow(
+                card, customer.id, customer.documentNumber)
             from CardEntity card
               join AccountEntity account on account.id = card.accountId
               join CustomerEntity customer on customer.id = account.customerId

@@ -3,6 +3,7 @@ package com.cardbilling.billing.application;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.cardbilling.billing.domain.BillingCycle;
+import com.cardbilling.billing.domain.Cardholder;
 import com.cardbilling.billing.domain.DocumentNumber;
 import com.cardbilling.billing.domain.InterestCharge;
 import com.cardbilling.billing.domain.Invoice;
@@ -32,7 +33,7 @@ class SearchInvoicesUseCaseTest {
     }
 
     private Invoice invoiceFor(DocumentNumber cardholder, long totalCents) {
-        return invoices.save(Invoice.close(1L, cardholder, BillingCycle.closingOn(CLOSING_DATE),
+        return invoices.save(Invoice.close(1L, Cardholder.of(7L, cardholder), BillingCycle.closingOn(CLOSING_DATE),
                 Money.ofCents(totalCents)));
     }
 

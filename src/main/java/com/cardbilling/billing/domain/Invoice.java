@@ -27,11 +27,12 @@ public class Invoice {
     private final Long id;
     private final long cardId;
     /**
-     * Denormalised from the cardholder at closing time. It is what {@code /invoices/search}
-     * indexes on - see {@code InvoiceEntity} for why this lives on the invoice row rather than
-     * being joined for on every lookup.
+     * Denormalised at closing time. The document number is what {@code /invoices/search} indexes
+     * on, and the customer id is what a caller needs to act on the cardholder rather than just
+     * identify the invoice - see {@code InvoiceEntity} for why both live on the invoice row
+     * rather than being joined for on every lookup.
      */
-    private final DocumentNumber customerDocumentNumber;
+    private final Cardholder cardholder;
     private final String referenceMonth;
     private final LocalDate closingDate;
     private final LocalDate dueDate;
@@ -42,13 +43,13 @@ public class Invoice {
     private final List<Payment> payments;
     private final List<InterestAccrual> interestAccruals;
 
-    private Invoice(Long id, long cardId, DocumentNumber customerDocumentNumber, String referenceMonth,
+    private Invoice(Long id, long cardId, Cardholder cardholder, String referenceMonth,
             LocalDate closingDate, LocalDate dueDate, Money totalAmount, Money interestApplied,
             LocalDate lastInterestAccrualDate, Status status, List<Payment> payments,
             List<InterestAccrual> interestAccruals) {
         this.id = id;
         this.cardId = cardId;
-        this.customerDocumentNumber = Objects.requireNonNull(customerDocumentNumber, "customerDocumentNumber");
+        this.cardholder = Objects.requireNonNull(cardholder, "cardholder");
         this.referenceMonth = Objects.requireNonNull(referenceMonth, "referenceMonth");
         this.closingDate = Objects.requireNonNull(closingDate, "closingDate");
         this.dueDate = Objects.requireNonNull(dueDate, "dueDate");
@@ -61,23 +62,22 @@ public class Invoice {
     }
 
     /** Closes a cycle into a new invoice. The only way an invoice is ever created. */
-    public static Invoice close(long cardId, DocumentNumber customerDocumentNumber, BillingCycle cycle,
-            Money totalAmount) {
-        return new Invoice(null, cardId, customerDocumentNumber, cycle.referenceMonth(), cycle.closingDate(),
+    public static Invoice close(long cardId, Cardholder cardholder, BillingCycle cycle, Money totalAmount) {
+        return new Invoice(null, cardId, cardholder, cycle.referenceMonth(), cycle.closingDate(),
                 cycle.dueDate(), totalAmount, Money.ZERO, null, Status.CLOSED, List.of(), List.of());
     }
 
     /** Rebuilds an invoice from storage. For the persistence adapter only. */
-    public static Invoice reconstitute(Long id, long cardId, DocumentNumber customerDocumentNumber,
+    public static Invoice reconstitute(Long id, long cardId, Cardholder cardholder,
             String referenceMonth, LocalDate closingDate, LocalDate dueDate, Money totalAmount,
             Money interestApplied, LocalDate lastInterestAccrualDate, Status status, List<Payment> payments,
             List<InterestAccrual> interestAccruals) {
-        return new Invoice(id, cardId, customerDocumentNumber, referenceMonth, closingDate, dueDate, totalAmount,
+        return new Invoice(id, cardId, cardholder, referenceMonth, closingDate, dueDate, totalAmount,
                 interestApplied, lastInterestAccrualDate, status, payments, interestAccruals);
     }
 
     public Invoice withId(Long assignedId) {
-        return new Invoice(assignedId, cardId, customerDocumentNumber, referenceMonth, closingDate, dueDate,
+        return new Invoice(assignedId, cardId, cardholder, referenceMonth, closingDate, dueDate,
                 totalAmount, interestApplied, lastInterestAccrualDate, status, payments, interestAccruals);
     }
 
@@ -172,8 +172,17 @@ public class Invoice {
         return cardId;
     }
 
+    public Cardholder cardholder() {
+        return cardholder;
+    }
+
+    /** Who this invoice is owed by. Callers acting on the cardholder address them by this id. */
+    public long customerId() {
+        return cardholder.customerId();
+    }
+
     public DocumentNumber customerDocumentNumber() {
-        return customerDocumentNumber;
+        return cardholder.documentNumber();
     }
 
     public String referenceMonth() {

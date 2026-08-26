@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.cardbilling.billing.domain.Card;
 import com.cardbilling.billing.domain.CardTransaction;
+import com.cardbilling.billing.domain.Cardholder;
 import com.cardbilling.billing.domain.DocumentNumber;
 import com.cardbilling.billing.domain.Invoice;
 import com.cardbilling.billing.domain.Money;
@@ -15,7 +16,7 @@ import org.junit.jupiter.api.Test;
 
 class CloseInvoiceCycleUseCaseTest {
 
-    private static final DocumentNumber CARDHOLDER = DocumentNumber.of("10000000042");
+    private static final Cardholder CARDHOLDER = Cardholder.of(7L, DocumentNumber.of("10000000042"));
     private static final LocalDate CLOSING_DATE = LocalDate.of(2026, 3, 15);
 
     private InMemoryCardRepository cards;
@@ -56,7 +57,8 @@ class CloseInvoiceCycleUseCaseTest {
         assertThat(invoice.dueDate()).isEqualTo(LocalDate.of(2026, 3, 25));
         assertThat(invoice.referenceMonth()).isEqualTo("2026-03");
         assertThat(invoice.status()).isEqualTo(Invoice.Status.CLOSED);
-        assertThat(invoice.customerDocumentNumber()).isEqualTo(CARDHOLDER);
+        assertThat(invoice.cardholder()).isEqualTo(CARDHOLDER);
+        assertThat(invoice.customerId()).isEqualTo(CARDHOLDER.customerId());
     }
 
     @Test

@@ -2,7 +2,7 @@ package com.cardbilling.billing.application;
 
 import com.cardbilling.billing.application.port.CardRepositoryPort;
 import com.cardbilling.billing.domain.Card;
-import com.cardbilling.billing.domain.DocumentNumber;
+import com.cardbilling.billing.domain.Cardholder;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicLong;
 class InMemoryCardRepository implements CardRepositoryPort {
 
     private final Map<Long, Card> cards = new LinkedHashMap<>();
-    private final Map<Long, DocumentNumber> cardholders = new LinkedHashMap<>();
+    private final Map<Long, Cardholder> cardholders = new LinkedHashMap<>();
     private final AtomicLong nextId = new AtomicLong(1);
 
     @Override
@@ -23,9 +23,9 @@ class InMemoryCardRepository implements CardRepositoryPort {
     }
 
     /** Registers a card already paired with its cardholder, the way the closing query returns it. */
-    Card saveHeldBy(Card card, DocumentNumber cardholderDocument) {
+    Card saveHeldBy(Card card, Cardholder cardholder) {
         Card stored = save(card);
-        cardholders.put(stored.id(), cardholderDocument);
+        cardholders.put(stored.id(), cardholder);
         return stored;
     }
 

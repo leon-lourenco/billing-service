@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.cardbilling.billing.application.InvoiceSearchQuery;
 import com.cardbilling.billing.application.port.InvoiceRepositoryPort;
 import com.cardbilling.billing.domain.BillingCycle;
+import com.cardbilling.billing.domain.Cardholder;
 import com.cardbilling.billing.domain.DocumentNumber;
 import com.cardbilling.billing.domain.InterestCharge;
 import com.cardbilling.billing.domain.Invoice;
@@ -14,6 +15,7 @@ import com.cardbilling.billing.infrastructure.PostgresIntegrationTest;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +29,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 class InvoicePersistenceIntegrationTest extends PostgresIntegrationTest {
 
     private static final DocumentNumber CARDHOLDER = DocumentNumber.of("10000000042");
+    private static final AtomicLong CUSTOMER_ID = new AtomicLong(500);
     private static final LocalDate CLOSING_DATE = LocalDate.of(2026, 3, 15);
     private static final LocalDate DUE_DATE = LocalDate.of(2026, 3, 25);
 
@@ -37,8 +40,8 @@ class InvoicePersistenceIntegrationTest extends PostgresIntegrationTest {
     private JdbcTemplate jdbcTemplate;
 
     private Invoice newInvoice(DocumentNumber cardholder, long totalCents) {
-        return invoices.save(Invoice.close(1L, cardholder, BillingCycle.closingOn(CLOSING_DATE),
-                Money.ofCents(totalCents)));
+        return invoices.save(Invoice.close(1L, Cardholder.of(CUSTOMER_ID.incrementAndGet(), cardholder),
+                BillingCycle.closingOn(CLOSING_DATE), Money.ofCents(totalCents)));
     }
 
     private InvoiceSearchQuery query(DocumentNumber cardholder, long amountCents, LocalDate aroundDate) {
@@ -58,6 +61,8 @@ class InvoicePersistenceIntegrationTest extends PostgresIntegrationTest {
         Invoice reloaded = invoices.findById(invoice.id()).orElseThrow();
 
         assertThat(reloaded.customerDocumentNumber()).isEqualTo(CARDHOLDER);
+        assertThat(reloaded.customerId()).isEqualTo(invoice.customerId());
+        assertThat(reloaded.cardholder()).isEqualTo(invoice.cardholder());
         assertThat(reloaded.referenceMonth()).isEqualTo("2026-03");
         assertThat(reloaded.closingDate()).isEqualTo(CLOSING_DATE);
         assertThat(reloaded.dueDate()).isEqualTo(DUE_DATE);

@@ -38,10 +38,11 @@ class InvoiceSearchIndexIntegrationTest extends PostgresIntegrationTest {
 
         jdbcTemplate.execute("""
                 insert into invoices (
-                    card_id, customer_document_number, reference_month, closing_date, due_date,
+                    card_id, customer_id, customer_document_number, reference_month, closing_date, due_date,
                     total_amount_cents, interest_applied_cents, amount_owed_cents, status)
                 select
                     (n %% 500) + 1,
+                    n,
                     lpad((20000000000 + n)::text, 11, '0'),
                     '2026-03',
                     date '2026-03-15',
@@ -56,9 +57,9 @@ class InvoiceSearchIndexIntegrationTest extends PostgresIntegrationTest {
         // The one row the query below is meant to find.
         jdbcTemplate.update("""
                 insert into invoices (
-                    card_id, customer_document_number, reference_month, closing_date, due_date,
+                    card_id, customer_id, customer_document_number, reference_month, closing_date, due_date,
                     total_amount_cents, interest_applied_cents, amount_owed_cents, status)
-                values (1, ?, '2026-03', date '2026-03-15', date '2026-03-25', 777000, 0, 777000, 'CLOSED')
+                values (1, 99999, ?, '2026-03', date '2026-03-15', date '2026-03-25', 777000, 0, 777000, 'CLOSED')
                 """, TARGET_DOCUMENT);
 
         jdbcTemplate.execute("analyze invoices");

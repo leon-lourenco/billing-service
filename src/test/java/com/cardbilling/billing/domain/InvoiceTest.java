@@ -28,6 +28,16 @@ class InvoiceTest {
         assertThat(invoice.dueDate()).isEqualTo(DUE_DATE);
     }
 
+    @Test
+    @DisplayName("carries both cardholder identifiers - the id to act on, the document to match on")
+    void carriesBothCardholderIdentifiers() {
+        Invoice invoice = closedInvoiceOf(50_000);
+
+        assertThat(invoice.customerId()).isEqualTo(InvoiceFixtures.CUSTOMER_ID);
+        assertThat(invoice.customerDocumentNumber()).isEqualTo(InvoiceFixtures.DOCUMENT);
+        assertThat(invoice.cardholder()).isEqualTo(InvoiceFixtures.CARDHOLDER);
+    }
+
     @Nested
     @DisplayName("interest accrual")
     class InterestAccrualBehaviour {

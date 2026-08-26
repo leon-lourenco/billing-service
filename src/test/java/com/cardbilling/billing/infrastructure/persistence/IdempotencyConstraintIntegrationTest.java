@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.cardbilling.billing.application.port.InvoiceRepositoryPort;
 import com.cardbilling.billing.domain.BillingCycle;
+import com.cardbilling.billing.domain.Cardholder;
 import com.cardbilling.billing.domain.DocumentNumber;
 import com.cardbilling.billing.domain.Invoice;
 import com.cardbilling.billing.domain.Money;
@@ -30,7 +31,7 @@ class IdempotencyConstraintIntegrationTest extends PostgresIntegrationTest {
     private JdbcTemplate jdbcTemplate;
 
     private Long anInvoiceId(String documentNumber) {
-        return invoices.save(Invoice.close(1L, DocumentNumber.of(documentNumber),
+        return invoices.save(Invoice.close(1L, Cardholder.of(1L, DocumentNumber.of(documentNumber)),
                 BillingCycle.closingOn(LocalDate.of(2026, 3, 15)), Money.ofCents(100_000))).id();
     }
 
