@@ -1,0 +1,45 @@
+# Local development infrastructure for billing-service on its own.
+#
+# Ports are picked to coexist with the rest of this portfolio rather than to be tidy:
+# card-billing-legacy's Postgres holds 5433 and another local project holds 5432, so this one
+# takes 5434. Keycloak takes 8180 to stay clear of the four services' own 8081-8084.
+#
+# Nothing here costs anything or needs to stay running: docker compose down -v and it is gone.
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: billing-service-postgres
+    environment:
+      POSTGRES_DB: billing
+      POSTGRES_USER: billing
+      POSTGRES_PASSWORD: billing
+    ports:
+      - "5434:5432"
+    volumes:
+      - billing-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U billing -d billing"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Imports the card-billing realm on startup, so the client credentials below work on a fresh
+  # volume with no manual setup. This realm file is a stopgap: it is meant to move to
+  # card-billing-shared/keycloak/realm-export.json once that repo exists, and be shared by all
+  # four services rather than copied into each.
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.7
+    container_name: billing-service-keycloak
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_HTTP_PORT: 8180
+    ports:
+      - "8180:8180"
+    volumes:
+      - ./docker/keycloak:/opt/keycloak/data/import:ro
+
+volumes:
+  billing-postgres-data:

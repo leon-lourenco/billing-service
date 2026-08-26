@@ -62,13 +62,25 @@ and the full reasoning. Tests written alongside implementation, not after.
 ## Running it
 
 ```bash
-docker compose up -d          # Postgres + Keycloak
+docker compose up -d          # Postgres on 5434, Keycloak on 8180
 ./gradlew bootRun
 ```
 
 Seeds 150 synthetic customers with four months of transaction history on first run — same
 dataset shape as `card-billing-legacy`. Swagger UI at `http://localhost:8081/swagger-ui.html`
 once running.
+
+The default configuration requires a Bearer token on every endpoint, so `bootRun` on its own
+expects Keycloak to be up. To poke at the API with curl without that, run under the `local`
+profile, which relaxes the resource-server chain to anonymous access:
+
+```bash
+./gradlew bootRun --args='--spring.profiles.active=local'
+```
+
+That profile is development-only and never active unless asked for by name — see `SecurityConfig`
+for exactly what it changes. The Keycloak realm in `docker/keycloak/` is a stopgap that belongs
+in `card-billing-shared` once that repo exists.
 
 ```bash
 ./gradlew test

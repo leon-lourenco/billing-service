@@ -1,0 +1,65 @@
+{
+  "realm": "card-billing",
+  "enabled": true,
+  "displayName": "card-billing",
+  "accessTokenLifespan": 900,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "clients": [
+    {
+      "clientId": "billing-service",
+      "name": "billing-service",
+      "description": "This service's own client, used when it needs a token of its own.",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "bearerOnly": false,
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "implicitFlowEnabled": false,
+      "secret": "billing-service-secret"
+    },
+    {
+      "clientId": "collections-service",
+      "name": "collections-service",
+      "description": "Reads overdue invoices and applies interest through this service's API.",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "bearerOnly": false,
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "implicitFlowEnabled": false,
+      "secret": "collections-service-secret"
+    },
+    {
+      "clientId": "notification-service",
+      "name": "notification-service",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "bearerOnly": false,
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "implicitFlowEnabled": false,
+      "secret": "notification-service-secret"
+    },
+    {
+      "clientId": "reconciliation-service",
+      "name": "reconciliation-service",
+      "description": "Matches statement lines via /invoices/search and posts payments.",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "bearerOnly": false,
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "implicitFlowEnabled": false,
+      "secret": "reconciliation-service-secret"
+    }
+  ]
+}
