@@ -1,0 +1,8 @@
+# Local development only.
+#
+# Activate with `./gradlew bootRun --args='--spring.profiles.active=local'` to drive the API with
+# curl without standing Keycloak up first - see SecurityConfig for what this actually relaxes.
+# Running with no profile active gets the secured configuration, which is the point.
+logging:
+  level:
+    org.hibernate.SQL: DEBUG

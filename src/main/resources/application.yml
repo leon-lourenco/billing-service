@@ -1,0 +1,52 @@
+spring:
+  application:
+    name: billing-service
+
+  datasource:
+    url: jdbc:postgresql://localhost:5434/billing
+    username: billing
+    password: billing
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      # Schema is generated from the JPA mapping, which is also where the indexes this service
+      # depends on are declared. A versioned migration tool is the right answer before anything
+      # resembling production - noted as a follow-up rather than pretended away.
+      ddl-auto: update
+    properties:
+      hibernate:
+        jdbc:
+          batch_size: 50
+        order_inserts: true
+        order_updates: true
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # The realm imported by docker-compose. Moves to card-billing-shared once that exists.
+          issuer-uri: http://localhost:8180/realms/card-billing
+
+server:
+  port: 8081
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+billing:
+  seed-demo-data: true
+
+logging:
+  level:
+    com.cardbilling.billing: INFO
