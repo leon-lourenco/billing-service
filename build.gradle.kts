@@ -30,6 +30,8 @@ dependencies {
     testImplementation(platform(libs.testcontainers.bom))
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
+    // Boot 4 split the MockMvc test support out of spring-boot-starter-test into its own module.
+    testImplementation("org.springframework.boot:spring-boot-webmvc-test")
     testImplementation("org.springframework.security:spring-security-test")
     testImplementation("org.testcontainers:junit-jupiter")
     testImplementation("org.testcontainers:postgresql")
