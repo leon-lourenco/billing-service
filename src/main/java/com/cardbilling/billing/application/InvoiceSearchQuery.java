@@ -14,6 +14,10 @@ import java.util.Objects;
  * <p>The amount is matched against what the invoice currently owes (its closed total plus
  * interest accrued since), not against the total it closed with, because that is what the
  * cardholder was actually asked to pay.
+ *
+ * <p>{@code amountOwed} may be {@code null}: a caller that already knows the exact-amount lookup
+ * found nothing asks this same question without it, to tell "this customer owes something else in
+ * the window" apart from "this customer owes nothing in the window at all".
  */
 public record InvoiceSearchQuery(
         DocumentNumber documentNumber,
@@ -25,7 +29,6 @@ public record InvoiceSearchQuery(
 
     public InvoiceSearchQuery {
         Objects.requireNonNull(documentNumber, "documentNumber");
-        Objects.requireNonNull(amountOwed, "amountOwed");
         Objects.requireNonNull(aroundDate, "aroundDate");
         if (toleranceDays < 0) {
             throw new MalformedValueException("toleranceDays",

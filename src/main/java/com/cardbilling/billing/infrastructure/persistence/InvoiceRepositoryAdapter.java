@@ -49,14 +49,19 @@ class InvoiceRepositoryAdapter implements InvoiceRepositoryPort {
 
     @Override
     public List<Invoice> search(InvoiceSearchQuery query) {
-        return invoices.search(
+        List<InvoiceEntity> matches = query.amountOwed() == null
+                ? invoices.searchByDocumentInWindow(
+                        query.documentNumber().value(),
+                        query.earliestDueDate(),
+                        query.latestDueDate(),
+                        Invoice.Status.PAID)
+                : invoices.search(
                         query.documentNumber().value(),
                         query.amountOwed().cents(),
                         query.earliestDueDate(),
                         query.latestDueDate(),
-                        Invoice.Status.PAID).stream()
-                .map(InvoiceEntity::toDomain)
-                .toList();
+                        Invoice.Status.PAID);
+        return matches.stream().map(InvoiceEntity::toDomain).toList();
     }
 
     @Override

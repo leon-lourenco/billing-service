@@ -56,14 +56,16 @@ class InvoiceController {
     @Operation(summary = "Find an unpaid invoice by cardholder document, amount owed and a due-date window",
             description = """
                     The indexed lookup that replaces reconciliation's nested loop. Amount is matched \
-                    against what the invoice currently owes, interest included.""")
+                    against what the invoice currently owes, interest included. Omitting amountCents \
+                    drops the amount filter, for telling "owes something else in this window" apart \
+                    from "owes nothing in this window at all".""")
     List<InvoiceResponse> search(
             @RequestParam("documentNumber") String documentNumber,
-            @RequestParam("amountCents") long amountCents,
+            @RequestParam(name = "amountCents", required = false) Long amountCents,
             @RequestParam("aroundDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate aroundDate,
             @RequestParam(name = "toleranceDays", defaultValue = "3") int toleranceDays) {
-        InvoiceSearchQuery query = new InvoiceSearchQuery(
-                DocumentNumber.of(documentNumber), Money.ofCents(amountCents), aroundDate, toleranceDays);
+        InvoiceSearchQuery query = new InvoiceSearchQuery(DocumentNumber.of(documentNumber),
+                amountCents == null ? null : Money.ofCents(amountCents), aroundDate, toleranceDays);
         return searchInvoices.search(query).stream()
                 .map(InvoiceResponse::from)
                 .toList();

@@ -42,4 +42,22 @@ interface InvoiceJpaRepository extends JpaRepository<InvoiceEntity, Long> {
             @Param("earliestDueDate") LocalDate earliestDueDate,
             @Param("latestDueDate") LocalDate latestDueDate,
             @Param("paidStatus") Invoice.Status paidStatus);
+
+    /**
+     * The reconciliation divergence check: same customer and due-date window, no amount filter.
+     * Only reached once the amount-filtered {@link #search} above has already found nothing, so
+     * this falling outside {@code idx_invoices_search} costs nothing that matters.
+     */
+    @EntityGraph(attributePaths = {"payments", "interestAccruals"})
+    @Query("""
+            select invoice from InvoiceEntity invoice
+            where invoice.customerDocumentNumber = :documentNumber
+              and invoice.dueDate between :earliestDueDate and :latestDueDate
+              and invoice.status <> :paidStatus
+            """)
+    List<InvoiceEntity> searchByDocumentInWindow(
+            @Param("documentNumber") String documentNumber,
+            @Param("earliestDueDate") LocalDate earliestDueDate,
+            @Param("latestDueDate") LocalDate latestDueDate,
+            @Param("paidStatus") Invoice.Status paidStatus);
 }
