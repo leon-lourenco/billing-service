@@ -33,8 +33,10 @@ dependencies {
     // Boot 4 split the MockMvc test support out of spring-boot-starter-test into its own module.
     testImplementation("org.springframework.boot:spring-boot-webmvc-test")
     testImplementation("org.springframework.security:spring-security-test")
-    testImplementation("org.testcontainers:junit-jupiter")
-    testImplementation("org.testcontainers:postgresql")
+    // Testcontainers 2.x (what testcontainers-bom now pins) renamed these from the bare
+    // `junit-jupiter`/`postgresql` coordinates to the `testcontainers-` prefixed ones below.
+    testImplementation("org.testcontainers:testcontainers-junit-jupiter")
+    testImplementation("org.testcontainers:testcontainers-postgresql")
     testImplementation(libs.archunit.junit5)
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
