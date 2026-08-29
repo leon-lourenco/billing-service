@@ -25,9 +25,8 @@ services:
       retries: 10
 
   # Imports the card-billing realm on startup, so the client credentials below work on a fresh
-  # volume with no manual setup. This realm file is a stopgap: it is meant to move to
-  # card-billing-shared/keycloak/realm-export.json once that repo exists, and be shared by all
-  # four services rather than copied into each.
+  # volume with no manual setup. The realm file itself lives in the card-billing-shared submodule,
+  # the same copy all four services import.
   keycloak:
     image: quay.io/keycloak/keycloak:26.7
     container_name: billing-service-keycloak
@@ -39,7 +38,7 @@ services:
     ports:
       - "8180:8180"
     volumes:
-      - ./docker/keycloak:/opt/keycloak/data/import:ro
+      - ./card-billing-shared/keycloak:/opt/keycloak/data/import:ro
 
 volumes:
   billing-postgres-data:
