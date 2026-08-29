@@ -24,7 +24,7 @@ OAuth2 resource server.
 | Endpoint | Purpose | Idempotency |
 |---|---|---|
 | `GET /invoices/overdue?asOf={date}` | Every invoice not yet paid, past due date | n/a (read) |
-| `GET /invoices/search?documentNumber=&amountCents=&aroundDate=&toleranceDays=3` | Indexed lookup by customer document + amount + date window | n/a (read) |
+| `GET /invoices/search?documentNumber=&amountCents=&aroundDate=&toleranceDays=3` | Indexed lookup by customer document + amount + date window. `amountCents` is optional — omitting it drops the amount filter, for telling "owes something else in this window" apart from "owes nothing" | n/a (read) |
 | `POST /invoices/{id}/interest` `{feeCents, dailyInterestCents, accrualDate}` | Applies interest/late fee | Unique per `(invoiceId, accrualDate)` — a second call for the same day is a no-op |
 | `POST /invoices/{id}/payments` `{amountCents, source, externalReference, paidAt}` | Records a payment, marks the invoice paid if fully covered | Unique on `externalReference` |
 | `POST /cycles/close?date=` | Closes every active card's billing cycle whose cycle day matches the date | n/a — a transaction is only ever assigned to one invoice |
@@ -40,6 +40,16 @@ date within a few days of the due date — the exact kind of fuzzy, non-indexed 
 a nested loop in the legacy, because there was no shared ID between an external bank statement
 and this system's own invoices. `GET /invoices/search` answers that question with a real
 database index instead, so the nested loop doesn't need to exist at all on the modern side.
+
+## Verified against the real platform
+
+Not just unit-tested in isolation — run against `collections-service` and `reconciliation-service`
+for real, over real HTTP, with real data: 150 seeded customers, 149 invoices closed from actual
+transaction history, R$5,263.35 in interest genuinely applied via `collections-service`'s
+`/collections/run`, and 3 payments recorded through `reconciliation-service`'s statement matching
+(`/invoices/{id}/payments`, `source: EXTERNAL_RECONCILIATION`). See
+[`collections-service`](https://github.com/leon-lourenco/collections-service#resilience--the-evidence)'s
+README for the resilience run captured by killing this service mid-integration-test.
 
 ## Engineering practices
 
@@ -79,8 +89,10 @@ profile, which relaxes the resource-server chain to anonymous access:
 ```
 
 That profile is development-only and never active unless asked for by name — see `SecurityConfig`
-for exactly what it changes. The Keycloak realm in `docker/keycloak/` is a stopgap that belongs
-in `card-billing-shared` once that repo exists.
+for exactly what it changes. The Keycloak realm in `docker/keycloak/` is the canonical four-client
+export, copied into the hub repo's shared platform compose; a `card-billing-shared` repo holding
+it (and the version catalog) once, shared by all four services as a git submodule, is the next
+planned step — see the hub repo's `INTEGRATION.md`.
 
 ```bash
 ./gradlew test
